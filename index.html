@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta CEP - Logradouros</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1342b0;
+            --accent: #f59e0b;
+            --bg: #f0f4ff;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --shadow: 0 4px 24px rgba(26,86,219,0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            color: #fff;
+            padding: 1.5rem 0 2rem;
+            box-shadow: 0 2px 16px rgba(26,86,219,0.25);
+        }
+        .site-header h1 {
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            font-weight: 700;
+            margin: 0 0 0.25rem;
+            letter-spacing: -0.5px;
+        }
+        .site-header p { margin: 0; opacity: .85; font-size: .95rem; }
+        .header-icon {
+            width: 52px; height: 52px;
+            background: rgba(255,255,255,.18);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; flex-shrink: 0;
+        }
+
+        /* ── Main card ── */
+        .search-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-top: -1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Form ── */
+        .form-label {
+            font-weight: 600;
+            font-size: .85rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: .4rem;
+        }
+        .form-control, .form-select {
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: .65rem 1rem;
+            font-size: .97rem;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26,86,219,.12);
+            outline: none;
+        }
+        .input-group-text {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: var(--primary);
+        }
+        .input-group .form-control { border-left: none; border-radius: 0 10px 10px 0; }
+        .input-group .form-control:focus { border-left: none; }
+
+        /* ── Search button ── */
+        .btn-buscar {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: .7rem 1.8rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform .15s, box-shadow .15s;
+            width: 100%;
+        }
+        .btn-buscar:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(26,86,219,.35);
+            color: #fff;
+        }
+        .btn-buscar:disabled { opacity: .65; }
+        .btn-limpar {
+            background: #fff;
+            color: var(--muted);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: .7rem 1.2rem;
+            font-weight: 600;
+            transition: all .15s;
+            width: 100%;
+        }
+        .btn-limpar:hover { border-color: var(--danger); color: var(--danger); }
+
+        /* ── Divider ── */
+        .divider {
+            border: none;
+            border-top: 2px dashed var(--border);
+            margin: 1.5rem 0;
+        }
+
+        /* ── Suggestions list ── */
+        #suggestions-container { position: relative; }
+        #suggestions-list {
+            list-style: none;
+            margin: .25rem 0 0;
+            padding: 0;
+            background: #fff;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(26,86,219,.15);
+            max-height: 320px;
+            overflow-y: auto;
+            position: absolute;
+            left: 0; right: 0;
+            z-index: 1000;
+        }
+        #suggestions-list li {
+            padding: .8rem 1.1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background .12s;
+            display: flex; align-items: flex-start; gap: .75rem;
+        }
+        #suggestions-list li:last-child { border-bottom: none; }
+        #suggestions-list li:hover, #suggestions-list li.active { background: #eff6ff; }
+        #suggestions-list li:first-child { border-radius: 10px 10px 0 0; }
+        #suggestions-list li:last-child { border-radius: 0 0 10px 10px; }
+        .sug-icon { color: var(--primary); font-size: .9rem; margin-top: .15rem; flex-shrink: 0; }
+        .sug-text strong { font-size: .95rem; color: var(--text); display: block; }
+        .sug-text small { color: var(--muted); font-size: .82rem; }
+
+        /* ── Status messages ── */
+        .status-msg {
+            padding: .85rem 1.1rem;
+            border-radius: 10px;
+            font-size: .9rem;
+            display: flex; align-items: center; gap: .6rem;
+        }
+        .status-loading { background: #eff6ff; color: var(--primary); border: 1px solid #bfdbfe; }
+        .status-empty   { background: #fff7ed; color: #b45309;        border: 1px solid #fde68a; }
+        .status-error   { background: #fef2f2; color: var(--danger);  border: 1px solid #fecaca; }
+
+        /* ── Result card ── */
+        #result-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 24px rgba(26,86,219,.12);
+            overflow: hidden;
+            animation: slideIn .3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity:0; transform:translateY(12px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .result-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            padding: 1rem 1.4rem;
+            display: flex; align-items: center; gap: .75rem;
+        }
+        .result-header h5 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+        .result-body { padding: 1.25rem 1.4rem; }
+
+        .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+
+        .field-item {}
+        .field-label {
+            font-size: .75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .6px;
+            color: var(--muted); margin-bottom: .25rem;
+        }
+        .field-value {
+            font-size: 1rem; font-weight: 600; color: var(--text);
+            background: var(--bg);
+            border-radius: 8px; padding: .5rem .85rem;
+            border: 1px solid var(--border);
+            min-height: 2.4rem;
+            display: flex; align-items: center;
+        }
+        .field-value.cep-novo {
+            background: #ecfdf5;
+            border-color: var(--success);
+            color: var(--success);
+            font-size: 1.15rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .field-value.cep-antigo {
+            background: #fff7ed;
+            border-color: #fb923c;
+            color: #c2410c;
+            font-size: 1.15rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .badge-nd {
+            background: #f1f5f9;
+            color: var(--muted);
+            border-radius: 6px;
+            padding: .2rem .6rem;
+            font-size: .8rem;
+            font-weight: 500;
+        }
+
+        /* Copy button */
+        .btn-copy {
+            background: none; border: none; color: var(--primary);
+            cursor: pointer; padding: .1rem .4rem; border-radius: 6px;
+            font-size: .85rem; transition: background .12s;
+        }
+        .btn-copy:hover { background: #eff6ff; }
+
+        /* ── History ── */
+        #history-section { display: none; }
+        .history-item {
+            background: #fff; border: 1px solid var(--border);
+            border-radius: 10px; padding: .7rem 1rem;
+            cursor: pointer; transition: all .15s;
+            display: flex; align-items: center; gap: .75rem;
+        }
+        .history-item:hover { border-color: var(--primary); background: #eff6ff; }
+        .history-item .hi-text strong { font-size: .93rem; display: block; }
+        .history-item .hi-text small { color: var(--muted); font-size: .8rem; }
+
+        /* ── Footer ── */
+        footer { padding: 2rem 0 1.5rem; color: var(--muted); font-size: .85rem; }
+        footer a { color: var(--primary); text-decoration: none; }
+
+        /* ── Responsive tweaks ── */
+        @media (max-width: 576px) {
+            .search-card { padding: 1.25rem; }
+            .field-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="site-header">
+    <div class="container">
+        <div class="d-flex align-items-center gap-3">
+            <div class="header-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div>
+                <h1>Consulta de CEP</h1>
+                <p>Busca inteligente de logradouros — CEP atualizado pelos Correios</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ══ MAIN ══ -->
+<main class="container pb-4">
+
+    <!-- Busca -->
+    <div class="search-card">
+        <div class="row g-3 align-items-end">
+
+            <!-- UF -->
+            <div class="col-6 col-sm-4 col-md-2">
+                <label class="form-label">UF</label>
+                <select id="sel-uf" class="form-select">
+                    <option value="">Selecione</option>
+                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                    <option selected>SP</option><option>SE</option><option>TO</option>
+                </select>
+            </div>
+
+            <!-- Cidade -->
+            <div class="col-12 col-sm-8 col-md-4">
+                <label class="form-label">Cidade</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-city fa-sm"></i></span>
+                    <input id="inp-cidade" type="text" class="form-control"
+                           placeholder="Ex.: São Paulo" autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Logradouro -->
+            <div class="col-12 col-md-6">
+                <label class="form-label">Logradouro <span class="text-primary">(sugestões automáticas)</span></label>
+                <div id="suggestions-container">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search fa-sm"></i></span>
+                        <input id="inp-logradouro" type="text" class="form-control"
+                               placeholder="Digite o nome da rua, av., praça…"
+                               autocomplete="off" disabled>
+                    </div>
+                    <!-- Suggestions appear here -->
+                    <ul id="suggestions-list" style="display:none;"></ul>
+                    <div id="status-msg" style="display:none;"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="row g-2 mt-2">
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <button id="btn-search" class="btn-buscar" onclick="doSearch()">
+                    <i class="fas fa-search me-1"></i> Buscar
+                </button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <button class="btn-limpar" onclick="clearAll()">
+                    <i class="fas fa-times me-1"></i> Limpar
+                </button>
+            </div>
+        </div>
+
+        <!-- Info tip -->
+        <div class="d-flex align-items-start gap-2 mt-3 p-2" style="background:#eff6ff;border-radius:8px;font-size:.83rem;color:#3b82f6;">
+            <i class="fas fa-lightbulb mt-1"></i>
+            <span>Preencha <strong>UF</strong> e <strong>Cidade</strong> e comece a digitar o logradouro — as sugestões aparecem automaticamente após 3 caracteres.</span>
+        </div>
+    </div>
+
+    <!-- ══ RESULTADO SELECIONADO ══ -->
+    <div id="result-section" style="display:none;" class="mt-4">
+        <div id="result-card">
+            <div class="result-header">
+                <i class="fas fa-map-pin fa-lg"></i>
+                <div>
+                    <h5 id="res-title">Endereço Encontrado</h5>
+                    <div style="opacity:.8;font-size:.83rem;" id="res-subtitle"></div>
+                </div>
+            </div>
+            <div class="result-body">
+                <div class="field-grid">
+                    <div class="field-item">
+                        <div class="field-label"><i class="fas fa-flag me-1"></i>UF</div>
+                        <div class="field-value" id="r-uf">—</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-label"><i class="fas fa-city me-1"></i>Cidade</div>
+                        <div class="field-value" id="r-cidade">—</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-label"><i class="fas fa-th-large me-1"></i>Bairro</div>
+                        <div class="field-value" id="r-bairro">—</div>
+                    </div>
+                    <div class="field-item" style="grid-column: span 1;">
+                        <div class="field-label"><i class="fas fa-road me-1"></i>Logradouro</div>
+                        <div class="field-value" id="r-logradouro" style="font-size:.9rem;">—</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-label"><i class="fas fa-history me-1"></i>CEP Antigo</div>
+                        <div class="field-value cep-antigo d-flex justify-content-between align-items-center" id="r-cep-antigo">—</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-label"><i class="fas fa-star me-1"></i>CEP Novo</div>
+                        <div class="field-value cep-novo d-flex justify-content-between align-items-center" id="r-cep-novo">—</div>
+                    </div>
+                </div>
+
+                <!-- DDD / complemento -->
+                <div class="row g-2 mt-1" id="extra-fields" style="display:none!important;">
+                    <div class="col-6 col-sm-4">
+                        <div class="field-label"><i class="fas fa-phone me-1"></i>DDD</div>
+                        <div class="field-value" id="r-ddd">—</div>
+                    </div>
+                    <div class="col-12 col-sm-8">
+                        <div class="field-label"><i class="fas fa-info-circle me-1"></i>Complemento</div>
+                        <div class="field-value" id="r-compl" style="font-size:.88rem;">—</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill"
+                            onclick="copyFullAddress()">
+                        <i class="fas fa-copy me-1"></i> Copiar endereço completo
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                            onclick="closeResult()">
+                        <i class="fas fa-times me-1"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ HISTÓRICO ══ -->
+    <div id="history-section" class="mt-4">
+        <hr class="divider">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0" style="color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:.8rem;">
+                <i class="fas fa-clock me-1"></i> Consultados recentemente
+            </h6>
+            <button class="btn btn-sm btn-link text-danger p-0" onclick="clearHistory()">
+                <i class="fas fa-trash-alt me-1"></i> Limpar histórico
+            </button>
+        </div>
+        <div id="history-list" class="d-flex flex-column gap-2"></div>
+    </div>
+
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer class="text-center">
+    <div class="container">
+        <div>Dados fornecidos pela API <a href="https://viacep.com.br" target="_blank">ViaCEP</a> (Correios)</div>
+        <div class="mt-1" style="font-size:.78rem;">
+            ⚠️ O <strong>CEP Antigo</strong> é informado quando o próprio Correios registra um campo de conversão.
+            Nem todos os endereços possuem CEP anterior cadastrado.
+        </div>
+    </div>
+</footer>
+
+<!-- Toast -->
+<div id="toast-wrap" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let debounceTimer  = null;
+let currentResults = [];
+let history        = JSON.parse(localStorage.getItem('cep_history') || '[]');
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('inp-logradouro');
+    const uf  = document.getElementById('sel-uf');
+    const cid = document.getElementById('inp-cidade');
+
+    // enable logradouro when UF + cidade filled
+    function toggleLogradouro() {
+        inp.disabled = !(uf.value && cid.value.trim().length >= 2);
+        if (inp.disabled) {
+            hideSuggestions();
+            inp.placeholder = 'Preencha UF e Cidade primeiro…';
+        } else {
+            inp.placeholder = 'Digite o nome da rua, av., praça…';
+        }
+    }
+    uf.addEventListener('change', toggleLogradouro);
+    cid.addEventListener('input', toggleLogradouro);
+
+    // logradouro — debounce live search
+    inp.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const val = inp.value.trim();
+        if (val.length < 3) { hideSuggestions(); return; }
+        debounceTimer = setTimeout(() => fetchSuggestions(val), 480);
+    });
+
+    // close suggestions on outside click
+    document.addEventListener('click', e => {
+        if (!document.getElementById('suggestions-container').contains(e.target)) hideSuggestions();
+    });
+
+    // keyboard navigation in list
+    inp.addEventListener('keydown', e => {
+        const list = document.querySelectorAll('#suggestions-list li');
+        const active = document.querySelector('#suggestions-list li.active');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!active) { list[0]?.classList.add('active'); }
+            else {
+                active.classList.remove('active');
+                (active.nextElementSibling || list[0]).classList.add('active');
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!active) { list[list.length-1]?.classList.add('active'); }
+            else {
+                active.classList.remove('active');
+                (active.previousElementSibling || list[list.length-1]).classList.add('active');
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (active) active.click();
+        } else if (e.key === 'Escape') hideSuggestions();
+    });
+
+    renderHistory();
+});
+
+/* ══════════════════════════════════════════
+   API
+══════════════════════════════════════════ */
+async function fetchSuggestions(logradouro) {
+    const uf   = document.getElementById('sel-uf').value.trim();
+    const city = encodeURIComponent(document.getElementById('inp-cidade').value.trim());
+    const loq  = encodeURIComponent(logradouro);
+
+    if (!uf || !city) return;
+
+    showStatus('loading', '<i class="fas fa-spinner fa-spin"></i> Buscando endereços…');
+
+    try {
+        const res  = await fetch(`https://viacep.com.br/ws/${uf}/${city}/${loq}/json/`);
+        if (!res.ok) throw new Error('Erro na requisição');
+        const data = await res.json();
+
+        if (data.erro || !Array.isArray(data) || data.length === 0) {
+            showStatus('empty', '<i class="fas fa-map-marker-slash"></i> Nenhum endereço encontrado. Verifique cidade e logradouro.');
+            return;
+        }
+
+        currentResults = data;
+        renderSuggestions(data);
+    } catch (err) {
+        showStatus('error', '<i class="fas fa-exclamation-triangle"></i> Falha ao consultar a API. Verifique sua conexão.');
+    }
+}
+
+/* ══════════════════════════════════════════
+   RENDER SUGGESTIONS
+══════════════════════════════════════════ */
+function renderSuggestions(list) {
+    const ul = document.getElementById('suggestions-list');
+    ul.innerHTML = '';
+    document.getElementById('status-msg').style.display = 'none';
+
+    list.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span class="sug-icon"><i class="fas fa-map-marker-alt"></i></span>
+            <span class="sug-text">
+                <strong>${item.logradouro || '(sem logradouro)'}${item.complemento ? ' — ' + item.complemento : ''}</strong>
+                <small>${item.bairro ? item.bairro + ' · ' : ''}${item.localidade} / ${item.uf} &nbsp;·&nbsp; CEP: <strong>${formatCEP(item.cep)}</strong></small>
+            </span>`;
+        li.addEventListener('click', () => selectAddress(item));
+        ul.appendChild(li);
+    });
+
+    ul.style.display = 'block';
+}
+
+/* ══════════════════════════════════════════
+   SELECT ADDRESS
+══════════════════════════════════════════ */
+function selectAddress(addr) {
+    hideSuggestions();
+    document.getElementById('inp-logradouro').value = addr.logradouro || '';
+
+    // UF, Cidade, Bairro, Logradouro
+    setText('r-uf',         addr.uf || '—');
+    setText('r-cidade',     addr.localidade || '—');
+    setText('r-bairro',     addr.bairro || '—');
+    setText('r-logradouro', [addr.logradouro, addr.complemento].filter(Boolean).join(' — ') || '—');
+
+    // CEP Novo (formatado)
+    const cepNovo = formatCEP(addr.cep);
+    const elNovo  = document.getElementById('r-cep-novo');
+    elNovo.innerHTML = `${cepNovo} <button class="btn-copy" title="Copiar" onclick="copyText('${addr.cep}')"><i class="fas fa-copy"></i></button>`;
+
+    // CEP Antigo — ViaCEP não fornece campo explícito; exibimos aviso informativo
+    const elAnt = document.getElementById('r-cep-antigo');
+    // A API pode retornar campo 'cep' com o CEP atual e não há campo de CEP antigo na ViaCEP.
+    // Exibimos "Não informado pela API" com tooltip explicativo.
+    elAnt.innerHTML = `<span class="badge-nd" title="A API ViaCEP não disponibiliza o CEP anterior. Consulte o site dos Correios para histórico.">Não disponível via API</span>`;
+
+    // Extras (DDD, complemento)
+    document.getElementById('r-ddd').textContent   = addr.ddd   || '—';
+    document.getElementById('r-compl').textContent = addr.complemento || '—';
+    const extraSection = document.getElementById('extra-fields');
+    if (addr.ddd || addr.complemento) extraSection.style.removeProperty('display');
+    else extraSection.style.setProperty('display','none','important');
+
+    // Título
+    document.getElementById('res-title').textContent    = addr.logradouro || 'Endereço Encontrado';
+    document.getElementById('res-subtitle').textContent = `${addr.localidade} / ${addr.uf}`;
+
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Save to history
+    addToHistory(addr);
+}
+
+/* ══════════════════════════════════════════
+   MANUAL SEARCH (button)
+══════════════════════════════════════════ */
+function doSearch() {
+    const val = document.getElementById('inp-logradouro').value.trim();
+    if (val.length < 3) { showToast('warning', 'Digite pelo menos 3 letras do logradouro.'); return; }
+    fetchSuggestions(val);
+}
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function formatCEP(cep) {
+    if (!cep) return '—';
+    const c = cep.replace(/\D/g, '');
+    return c.length === 8 ? c.slice(0,5) + '-' + c.slice(5) : cep;
+}
+
+function setText(id, val) { document.getElementById(id).textContent = val; }
+
+function hideSuggestions() {
+    document.getElementById('suggestions-list').style.display = 'none';
+    document.getElementById('status-msg').style.display = 'none';
+}
+
+function showStatus(type, html) {
+    const el = document.getElementById('status-msg');
+    document.getElementById('suggestions-list').style.display = 'none';
+    el.className = `status-msg status-${type}`;
+    el.innerHTML = html;
+    el.style.display = 'flex';
+}
+
+function clearAll() {
+    ['inp-logradouro','inp-cidade'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('sel-uf').value = '';
+    hideSuggestions();
+    closeResult();
+    document.getElementById('inp-logradouro').disabled = true;
+    document.getElementById('inp-logradouro').placeholder = 'Preencha UF e Cidade primeiro…';
+}
+
+function closeResult() {
+    document.getElementById('result-section').style.display = 'none';
+}
+
+function copyText(txt) {
+    navigator.clipboard.writeText(txt).then(() => showToast('success', `CEP <strong>${formatCEP(txt)}</strong> copiado!`));
+}
+
+function copyFullAddress() {
+    const uf    = document.getElementById('r-uf').textContent;
+    const cid   = document.getElementById('r-cidade').textContent;
+    const bai   = document.getElementById('r-bairro').textContent;
+    const log   = document.getElementById('r-logradouro').textContent;
+    const cep   = document.getElementById('r-cep-novo').textContent.replace('Não disponível via API','').trim();
+    const full  = `${log}, ${bai}, ${cid} - ${uf}\nCEP: ${cep}`;
+    navigator.clipboard.writeText(full).then(() => showToast('success', 'Endereço copiado para a área de transferência!'));
+}
+
+/* ══════════════════════════════════════════
+   HISTORY
+══════════════════════════════════════════ */
+function addToHistory(addr) {
+    const key = addr.cep;
+    history = history.filter(h => h.cep !== key);
+    history.unshift({ cep: addr.cep, logradouro: addr.logradouro, bairro: addr.bairro, localidade: addr.localidade, uf: addr.uf, full: addr });
+    if (history.length > 10) history.pop();
+    localStorage.setItem('cep_history', JSON.stringify(history));
+    renderHistory();
+}
+
+function renderHistory() {
+    const sec  = document.getElementById('history-section');
+    const list = document.getElementById('history-list');
+    if (!history.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    list.innerHTML = history.map((h, i) => `
+        <div class="history-item" onclick="selectAddress(${JSON.stringify(h.full).replace(/"/g,'&quot;')})">
+            <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i>
+            <div class="hi-text flex-grow-1">
+                <strong>${h.logradouro || '(sem logradouro)'}</strong>
+                <small>${h.bairro ? h.bairro + ' · ' : ''}${h.localidade} / ${h.uf} &nbsp;·&nbsp; ${formatCEP(h.cep)}</small>
+            </div>
+            <i class="fas fa-chevron-right" style="color:var(--muted);font-size:.8rem;"></i>
+        </div>`).join('');
+}
+
+function clearHistory() {
+    history = [];
+    localStorage.removeItem('cep_history');
+    renderHistory();
+    showToast('info', 'Histórico limpo.');
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+function showToast(type, html) {
+    const colors = { success:'#10b981', warning:'#f59e0b', error:'#ef4444', info:'#3b82f6' };
+    const icons  = { success:'check-circle', warning:'exclamation-triangle', error:'times-circle', info:'info-circle' };
+    const wrap   = document.getElementById('toast-wrap');
+    const t      = document.createElement('div');
+    t.style.cssText = `background:#fff;border-left:4px solid ${colors[type]};border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:.8rem 1.1rem;margin-top:.5rem;display:flex;align-items:center;gap:.6rem;font-size:.9rem;max-width:320px;animation:slideIn .3s ease`;
+    t.innerHTML = `<i class="fas fa-${icons[type]}" style="color:${colors[type]};"></i><span>${html}</span>`;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+}
+</script>
+</body>
+</html>
