@@ -130,9 +130,9 @@
             margin: 1.5rem 0;
         }
 
-        /* ── Suggestions list ── */
-        #suggestions-container { position: relative; }
-        #suggestions-list {
+        /* ── Suggestions (shared style for cidade and logradouro) ── */
+        .sug-wrap { position: relative; }
+        .sug-list {
             list-style: none;
             margin: .25rem 0 0;
             padding: 0;
@@ -140,26 +140,34 @@
             border: 2px solid var(--primary);
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(26,86,219,.15);
-            max-height: 320px;
+            max-height: 260px;
             overflow-y: auto;
             position: absolute;
             left: 0; right: 0;
             z-index: 1000;
         }
-        #suggestions-list li {
-            padding: .8rem 1.1rem;
+        .sug-list li {
+            padding: .75rem 1.1rem;
             cursor: pointer;
             border-bottom: 1px solid var(--border);
             transition: background .12s;
             display: flex; align-items: flex-start; gap: .75rem;
         }
-        #suggestions-list li:last-child { border-bottom: none; }
-        #suggestions-list li:hover, #suggestions-list li.active { background: #eff6ff; }
-        #suggestions-list li:first-child { border-radius: 10px 10px 0 0; }
-        #suggestions-list li:last-child { border-radius: 0 0 10px 10px; }
+        .sug-list li:last-child { border-bottom: none; }
+        .sug-list li:hover, .sug-list li.active { background: #eff6ff; }
+        .sug-list li:first-child { border-radius: 10px 10px 0 0; }
+        .sug-list li:last-child  { border-radius: 0 0 10px 10px; }
         .sug-icon { color: var(--primary); font-size: .9rem; margin-top: .15rem; flex-shrink: 0; }
         .sug-text strong { font-size: .95rem; color: var(--text); display: block; }
         .sug-text small { color: var(--muted); font-size: .82rem; }
+
+        /* cidade loading spinner inside input */
+        .cidade-loading {
+            position: absolute; right: .75rem; top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary); font-size: .85rem;
+            pointer-events: none;
+        }
 
         /* ── Status messages ── */
         .status-msg {
@@ -301,32 +309,41 @@
                     <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
                     <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
                     <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                    <option selected>SP</option><option>SE</option><option>TO</option>
+                    <option>SP</option><option>SE</option><option>TO</option>
                 </select>
             </div>
 
-            <!-- Cidade -->
+            <!-- Cidade com autocomplete -->
             <div class="col-12 col-sm-8 col-md-4">
-                <label class="form-label">Cidade</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-city fa-sm"></i></span>
-                    <input id="inp-cidade" type="text" class="form-control"
-                           placeholder="Ex.: São Paulo" autocomplete="off">
+                <label class="form-label">
+                    Cidade <span class="text-primary" id="cidade-label-hint">(selecione a UF primeiro)</span>
+                </label>
+                <div class="sug-wrap">
+                    <div class="input-group" style="position:relative;">
+                        <span class="input-group-text"><i class="fas fa-city fa-sm"></i></span>
+                        <input id="inp-cidade" type="text" class="form-control"
+                               placeholder="Selecione a UF primeiro…"
+                               autocomplete="off" disabled>
+                        <span id="cidade-spinner" class="cidade-loading" style="display:none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
+                    </div>
+                    <ul id="cidade-list" class="sug-list" style="display:none;"></ul>
+                    <div id="cidade-status" style="display:none;"></div>
                 </div>
             </div>
 
             <!-- Logradouro -->
             <div class="col-12 col-md-6">
                 <label class="form-label">Logradouro <span class="text-primary">(sugestões automáticas)</span></label>
-                <div id="suggestions-container">
+                <div class="sug-wrap" id="suggestions-container">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search fa-sm"></i></span>
                         <input id="inp-logradouro" type="text" class="form-control"
                                placeholder="Digite o nome da rua, av., praça…"
                                autocomplete="off" disabled>
                     </div>
-                    <!-- Suggestions appear here -->
-                    <ul id="suggestions-list" style="display:none;"></ul>
+                    <ul id="suggestions-list" class="sug-list" style="display:none;"></ul>
                     <div id="status-msg" style="display:none;"></div>
                 </div>
             </div>
@@ -350,7 +367,7 @@
         <!-- Info tip -->
         <div class="d-flex align-items-start gap-2 mt-3 p-2" style="background:#eff6ff;border-radius:8px;font-size:.83rem;color:#3b82f6;">
             <i class="fas fa-lightbulb mt-1"></i>
-            <span>Preencha <strong>UF</strong> e <strong>Cidade</strong> e comece a digitar o logradouro — as sugestões aparecem automaticamente após 3 caracteres.</span>
+            <span>Selecione a <strong>UF</strong> → as cidades carregam automaticamente → escolha a <strong>Cidade</strong> → digite o <strong>logradouro</strong> para ver as sugestões.</span>
         </div>
     </div>
 
@@ -437,7 +454,7 @@
 <!-- ══ FOOTER ══ -->
 <footer class="text-center">
     <div class="container">
-        <div>Dados fornecidos pela API <a href="https://viacep.com.br" target="_blank">ViaCEP</a> (Correios)</div>
+        <div>Dados fornecidos pela API <a href="https://viacep.com.br" target="_blank">ViaCEP</a> (Correios) e <a href="https://servicodados.ibge.gov.br" target="_blank">IBGE</a></div>
         <div class="mt-1" style="font-size:.78rem;">
             ⚠️ O <strong>CEP Antigo</strong> é informado quando o próprio Correios registra um campo de conversão.
             Nem todos os endereços possuem CEP anterior cadastrado.
@@ -453,109 +470,199 @@
 /* ══════════════════════════════════════════
    STATE
 ══════════════════════════════════════════ */
-let debounceTimer  = null;
-let currentResults = [];
-let history        = JSON.parse(localStorage.getItem('cep_history') || '[]');
+let debounceLogradouro = null;
+let debouncecidade     = null;
+let currentResults     = [];
+let cidadesList        = [];   // cidades carregadas do IBGE para a UF atual
+let cidadeSelecionada  = '';   // nome exato da cidade confirmada
+let history            = JSON.parse(localStorage.getItem('cep_history') || '[]');
 
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-    const inp = document.getElementById('inp-logradouro');
-    const uf  = document.getElementById('sel-uf');
-    const cid = document.getElementById('inp-cidade');
+    const selUF   = document.getElementById('sel-uf');
+    const inpCid  = document.getElementById('inp-cidade');
+    const inpLog  = document.getElementById('inp-logradouro');
 
-    // enable logradouro when UF + cidade filled
-    function toggleLogradouro() {
-        inp.disabled = !(uf.value && cid.value.trim().length >= 2);
-        if (inp.disabled) {
-            hideSuggestions();
-            inp.placeholder = 'Preencha UF e Cidade primeiro…';
-        } else {
-            inp.placeholder = 'Digite o nome da rua, av., praça…';
+    /* ── UF change → carrega cidades do IBGE ── */
+    selUF.addEventListener('change', () => {
+        resetCidade();
+        resetLogradouro();
+        cidadeSelecionada = '';
+        cidadesList = [];
+
+        if (!selUF.value) {
+            inpCid.disabled = true;
+            inpCid.placeholder = 'Selecione a UF primeiro…';
+            document.getElementById('cidade-label-hint').textContent = '(selecione a UF primeiro)';
+            return;
         }
-    }
-    uf.addEventListener('change', toggleLogradouro);
-    cid.addEventListener('input', toggleLogradouro);
-
-    // logradouro — debounce live search
-    inp.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        const val = inp.value.trim();
-        if (val.length < 3) { hideSuggestions(); return; }
-        debounceTimer = setTimeout(() => fetchSuggestions(val), 480);
+        loadCidades(selUF.value);
     });
 
-    // close suggestions on outside click
+    /* ── Cidade: digitação com filtro local ── */
+    inpCid.addEventListener('input', () => {
+        cidadeSelecionada = '';          // cidade não confirmada → desabilita logradouro
+        toggleLogradouro();
+        clearTimeout(debouncecidade);
+        debouncecidade = setTimeout(() => filterCidades(inpCid.value.trim()), 200);
+    });
+
+    /* ── Logradouro: debounce live search ── */
+    inpLog.addEventListener('input', () => {
+        clearTimeout(debounceLogradouro);
+        const val = inpLog.value.trim();
+        if (val.length < 3) { hideSugLog(); return; }
+        debounceLogradouro = setTimeout(() => fetchLogradouro(val), 480);
+    });
+
+    /* ── Fechar dropdowns ao clicar fora ── */
     document.addEventListener('click', e => {
-        if (!document.getElementById('suggestions-container').contains(e.target)) hideSuggestions();
+        if (!document.getElementById('inp-cidade').closest('.sug-wrap').contains(e.target)) hideSugCid();
+        if (!document.getElementById('suggestions-container').contains(e.target)) hideSugLog();
     });
 
-    // keyboard navigation in list
-    inp.addEventListener('keydown', e => {
+    /* ── Teclado: cidade ── */
+    inpCid.addEventListener('keydown', e => navKeys(e, 'cidade-list', selectCidade));
+
+    /* ── Teclado: logradouro ── */
+    inpLog.addEventListener('keydown', e => {
         const list = document.querySelectorAll('#suggestions-list li');
         const active = document.querySelector('#suggestions-list li.active');
         if (e.key === 'ArrowDown') {
             e.preventDefault();
-            if (!active) { list[0]?.classList.add('active'); }
-            else {
-                active.classList.remove('active');
-                (active.nextElementSibling || list[0]).classList.add('active');
-            }
+            if (!active) list[0]?.classList.add('active');
+            else { active.classList.remove('active'); (active.nextElementSibling || list[0]).classList.add('active'); }
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
-            if (!active) { list[list.length-1]?.classList.add('active'); }
-            else {
-                active.classList.remove('active');
-                (active.previousElementSibling || list[list.length-1]).classList.add('active');
-            }
+            if (!active) list[list.length-1]?.classList.add('active');
+            else { active.classList.remove('active'); (active.previousElementSibling || list[list.length-1]).classList.add('active'); }
         } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (active) active.click();
-        } else if (e.key === 'Escape') hideSuggestions();
+            e.preventDefault(); if (active) active.click();
+        } else if (e.key === 'Escape') hideSugLog();
     });
 
     renderHistory();
 });
 
 /* ══════════════════════════════════════════
-   API
+   CIDADES — IBGE API
 ══════════════════════════════════════════ */
-async function fetchSuggestions(logradouro) {
-    const uf   = document.getElementById('sel-uf').value.trim();
-    const city = encodeURIComponent(document.getElementById('inp-cidade').value.trim());
-    const loq  = encodeURIComponent(logradouro);
+async function loadCidades(uf) {
+    const inpCid = document.getElementById('inp-cidade');
+    const spinner = document.getElementById('cidade-spinner');
+    const hint    = document.getElementById('cidade-label-hint');
 
-    if (!uf || !city) return;
-
-    showStatus('loading', '<i class="fas fa-spinner fa-spin"></i> Buscando endereços…');
+    inpCid.disabled = true;
+    inpCid.placeholder = 'Carregando cidades…';
+    inpCid.value = '';
+    spinner.style.display = 'inline';
+    hint.textContent = '(carregando…)';
 
     try {
-        const res  = await fetch(`https://viacep.com.br/ws/${uf}/${city}/${loq}/json/`);
-        if (!res.ok) throw new Error('Erro na requisição');
+        const res  = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
         const data = await res.json();
+        cidadesList = data.map(m => m.nome);
 
-        if (data.erro || !Array.isArray(data) || data.length === 0) {
-            showStatus('empty', '<i class="fas fa-map-marker-slash"></i> Nenhum endereço encontrado. Verifique cidade e logradouro.');
-            return;
-        }
-
-        currentResults = data;
-        renderSuggestions(data);
-    } catch (err) {
-        showStatus('error', '<i class="fas fa-exclamation-triangle"></i> Falha ao consultar a API. Verifique sua conexão.');
+        inpCid.disabled = false;
+        inpCid.placeholder = `Digite o nome da cidade (${cidadesList.length} opções)…`;
+        hint.textContent = `(${cidadesList.length} cidades)`;
+        inpCid.focus();
+    } catch {
+        hint.textContent = '(erro ao carregar)';
+        inpCid.placeholder = 'Erro ao carregar cidades. Tente novamente.';
+        inpCid.disabled = false;
+    } finally {
+        spinner.style.display = 'none';
     }
 }
 
+function filterCidades(query) {
+    const ul = document.getElementById('cidade-list');
+    hideSugCidStatus();
+
+    if (!query) { hideSugCid(); return; }
+
+    const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const q    = norm(query);
+    const matches = cidadesList.filter(c => norm(c).includes(q)).slice(0, 10);
+
+    if (!matches.length) {
+        ul.style.display = 'none';
+        showCidadeStatus('empty', '<i class="fas fa-search-minus"></i> Nenhuma cidade encontrada.');
+        return;
+    }
+
+    ul.innerHTML = '';
+    matches.forEach(cidade => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span class="sug-icon"><i class="fas fa-city"></i></span>
+            <span class="sug-text"><strong>${highlightMatch(cidade, query)}</strong></span>`;
+        li.addEventListener('click', () => selectCidade(cidade));
+        ul.appendChild(li);
+    });
+    ul.style.display = 'block';
+}
+
+function highlightMatch(text, query) {
+    const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const idx  = norm(text).indexOf(norm(query));
+    if (idx === -1) return text;
+    return text.slice(0,idx) + '<mark style="background:#bfdbfe;border-radius:3px;padding:0 2px;">' + text.slice(idx, idx+query.length) + '</mark>' + text.slice(idx+query.length);
+}
+
+function selectCidade(nome) {
+    document.getElementById('inp-cidade').value = nome;
+    cidadeSelecionada = nome;
+    hideSugCid();
+    toggleLogradouro();
+    document.getElementById('inp-logradouro').focus();
+    showToast('info', `Cidade <strong>${nome}</strong> selecionada.`);
+}
+
 /* ══════════════════════════════════════════
-   RENDER SUGGESTIONS
+   LOGRADOURO — ViaCEP API
 ══════════════════════════════════════════ */
-function renderSuggestions(list) {
+function toggleLogradouro() {
+    const inpLog = document.getElementById('inp-logradouro');
+    const ok     = !!document.getElementById('sel-uf').value && !!cidadeSelecionada;
+    inpLog.disabled = !ok;
+    inpLog.placeholder = ok ? 'Digite o nome da rua, av., praça…' : 'Selecione a cidade primeiro…';
+    if (!ok) hideSugLog();
+}
+
+async function fetchLogradouro(logradouro) {
+    const uf  = document.getElementById('sel-uf').value.trim();
+    const cid = encodeURIComponent(cidadeSelecionada);
+    const loq = encodeURIComponent(logradouro);
+
+    if (!uf || !cidadeSelecionada) return;
+    showStatusLog('loading', '<i class="fas fa-spinner fa-spin"></i> Buscando endereços…');
+
+    try {
+        const res  = await fetch(`https://viacep.com.br/ws/${uf}/${cid}/${loq}/json/`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        if (data.erro || !Array.isArray(data) || !data.length) {
+            showStatusLog('empty', '<i class="fas fa-map-marker-slash"></i> Nenhum endereço encontrado. Tente outro logradouro.');
+            return;
+        }
+        currentResults = data;
+        renderSugLog(data);
+    } catch {
+        showStatusLog('error', '<i class="fas fa-exclamation-triangle"></i> Falha ao consultar a API. Verifique sua conexão.');
+    }
+}
+
+function renderSugLog(list) {
     const ul = document.getElementById('suggestions-list');
     ul.innerHTML = '';
     document.getElementById('status-msg').style.display = 'none';
 
-    list.forEach((item, idx) => {
+    list.forEach(item => {
         const li = document.createElement('li');
         li.innerHTML = `
             <span class="sug-icon"><i class="fas fa-map-marker-alt"></i></span>
@@ -566,7 +673,6 @@ function renderSuggestions(list) {
         li.addEventListener('click', () => selectAddress(item));
         ul.appendChild(li);
     });
-
     ul.style.display = 'block';
 }
 
@@ -574,51 +680,105 @@ function renderSuggestions(list) {
    SELECT ADDRESS
 ══════════════════════════════════════════ */
 function selectAddress(addr) {
-    hideSuggestions();
+    hideSugLog();
     document.getElementById('inp-logradouro').value = addr.logradouro || '';
 
-    // UF, Cidade, Bairro, Logradouro
     setText('r-uf',         addr.uf || '—');
     setText('r-cidade',     addr.localidade || '—');
     setText('r-bairro',     addr.bairro || '—');
     setText('r-logradouro', [addr.logradouro, addr.complemento].filter(Boolean).join(' — ') || '—');
 
-    // CEP Novo (formatado)
     const cepNovo = formatCEP(addr.cep);
     const elNovo  = document.getElementById('r-cep-novo');
     elNovo.innerHTML = `${cepNovo} <button class="btn-copy" title="Copiar" onclick="copyText('${addr.cep}')"><i class="fas fa-copy"></i></button>`;
 
-    // CEP Antigo — ViaCEP não fornece campo explícito; exibimos aviso informativo
     const elAnt = document.getElementById('r-cep-antigo');
-    // A API pode retornar campo 'cep' com o CEP atual e não há campo de CEP antigo na ViaCEP.
-    // Exibimos "Não informado pela API" com tooltip explicativo.
-    elAnt.innerHTML = `<span class="badge-nd" title="A API ViaCEP não disponibiliza o CEP anterior. Consulte o site dos Correios para histórico.">Não disponível via API</span>`;
+    elAnt.innerHTML = `<span class="badge-nd" title="A API ViaCEP não disponibiliza o CEP anterior. Consulte o site dos Correios.">Não disponível via API</span>`;
 
-    // Extras (DDD, complemento)
     document.getElementById('r-ddd').textContent   = addr.ddd   || '—';
     document.getElementById('r-compl').textContent = addr.complemento || '—';
     const extraSection = document.getElementById('extra-fields');
     if (addr.ddd || addr.complemento) extraSection.style.removeProperty('display');
     else extraSection.style.setProperty('display','none','important');
 
-    // Título
     document.getElementById('res-title').textContent    = addr.logradouro || 'Endereço Encontrado';
     document.getElementById('res-subtitle').textContent = `${addr.localidade} / ${addr.uf}`;
 
     document.getElementById('result-section').style.display = 'block';
     document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    // Save to history
     addToHistory(addr);
 }
 
 /* ══════════════════════════════════════════
-   MANUAL SEARCH (button)
+   MANUAL SEARCH
 ══════════════════════════════════════════ */
 function doSearch() {
     const val = document.getElementById('inp-logradouro').value.trim();
+    if (!cidadeSelecionada) { showToast('warning', 'Selecione uma cidade na lista de sugestões.'); return; }
     if (val.length < 3) { showToast('warning', 'Digite pelo menos 3 letras do logradouro.'); return; }
-    fetchSuggestions(val);
+    fetchLogradouro(val);
+}
+
+/* ══════════════════════════════════════════
+   HIDE / SHOW HELPERS
+══════════════════════════════════════════ */
+function hideSugCid() { document.getElementById('cidade-list').style.display = 'none'; }
+function hideSugCidStatus() { document.getElementById('cidade-status').style.display = 'none'; }
+function showCidadeStatus(type, html) {
+    const el = document.getElementById('cidade-status');
+    hideSugCid();
+    el.className = `status-msg status-${type} mt-1`;
+    el.innerHTML = html;
+    el.style.display = 'flex';
+}
+function hideSugLog() {
+    document.getElementById('suggestions-list').style.display = 'none';
+    document.getElementById('status-msg').style.display = 'none';
+}
+function showStatusLog(type, html) {
+    const el = document.getElementById('status-msg');
+    document.getElementById('suggestions-list').style.display = 'none';
+    el.className = `status-msg status-${type}`;
+    el.innerHTML = html;
+    el.style.display = 'flex';
+}
+
+function resetCidade() {
+    const inpCid = document.getElementById('inp-cidade');
+    inpCid.value = '';
+    inpCid.disabled = true;
+    inpCid.placeholder = 'Selecione a UF primeiro…';
+    hideSugCid();
+    hideSugCidStatus();
+    document.getElementById('cidade-label-hint').textContent = '(selecione a UF primeiro)';
+}
+
+function resetLogradouro() {
+    document.getElementById('inp-logradouro').value = '';
+    document.getElementById('inp-logradouro').disabled = true;
+    document.getElementById('inp-logradouro').placeholder = 'Selecione a cidade primeiro…';
+    hideSugLog();
+}
+
+/* ── Navegação por teclado genérica ── */
+function navKeys(e, listId, selectFn) {
+    const list   = document.querySelectorAll(`#${listId} li`);
+    const active = document.querySelector(`#${listId} li.active`);
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!active) list[0]?.classList.add('active');
+        else { active.classList.remove('active'); (active.nextElementSibling || list[0]).classList.add('active'); }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!active) list[list.length-1]?.classList.add('active');
+        else { active.classList.remove('active'); (active.previousElementSibling || list[list.length-1]).classList.add('active'); }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (active) { const nome = active.querySelector('strong')?.textContent; if (nome) selectFn(nome.replace(/<[^>]+>/g,'')); }
+    } else if (e.key === 'Escape') {
+        hideSugCid();
+    }
 }
 
 /* ══════════════════════════════════════════
@@ -629,55 +789,39 @@ function formatCEP(cep) {
     const c = cep.replace(/\D/g, '');
     return c.length === 8 ? c.slice(0,5) + '-' + c.slice(5) : cep;
 }
-
 function setText(id, val) { document.getElementById(id).textContent = val; }
 
-function hideSuggestions() {
-    document.getElementById('suggestions-list').style.display = 'none';
-    document.getElementById('status-msg').style.display = 'none';
-}
-
-function showStatus(type, html) {
-    const el = document.getElementById('status-msg');
-    document.getElementById('suggestions-list').style.display = 'none';
-    el.className = `status-msg status-${type}`;
-    el.innerHTML = html;
-    el.style.display = 'flex';
-}
-
 function clearAll() {
-    ['inp-logradouro','inp-cidade'].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('sel-uf').value = '';
-    hideSuggestions();
+    document.getElementById('inp-logradouro').value = '';
+    cidadesList = [];
+    cidadeSelecionada = '';
+    resetCidade();
+    resetLogradouro();
     closeResult();
-    document.getElementById('inp-logradouro').disabled = true;
-    document.getElementById('inp-logradouro').placeholder = 'Preencha UF e Cidade primeiro…';
 }
 
-function closeResult() {
-    document.getElementById('result-section').style.display = 'none';
-}
+function closeResult() { document.getElementById('result-section').style.display = 'none'; }
 
 function copyText(txt) {
     navigator.clipboard.writeText(txt).then(() => showToast('success', `CEP <strong>${formatCEP(txt)}</strong> copiado!`));
 }
 
 function copyFullAddress() {
-    const uf    = document.getElementById('r-uf').textContent;
-    const cid   = document.getElementById('r-cidade').textContent;
-    const bai   = document.getElementById('r-bairro').textContent;
-    const log   = document.getElementById('r-logradouro').textContent;
-    const cep   = document.getElementById('r-cep-novo').textContent.replace('Não disponível via API','').trim();
-    const full  = `${log}, ${bai}, ${cid} - ${uf}\nCEP: ${cep}`;
-    navigator.clipboard.writeText(full).then(() => showToast('success', 'Endereço copiado para a área de transferência!'));
+    const uf  = document.getElementById('r-uf').textContent;
+    const cid = document.getElementById('r-cidade').textContent;
+    const bai = document.getElementById('r-bairro').textContent;
+    const log = document.getElementById('r-logradouro').textContent;
+    const cep = document.getElementById('r-cep-novo').textContent.replace('Não disponível via API','').trim();
+    navigator.clipboard.writeText(`${log}, ${bai}, ${cid} - ${uf}\nCEP: ${cep}`)
+        .then(() => showToast('success', 'Endereço copiado!'));
 }
 
 /* ══════════════════════════════════════════
    HISTORY
 ══════════════════════════════════════════ */
 function addToHistory(addr) {
-    const key = addr.cep;
-    history = history.filter(h => h.cep !== key);
+    history = history.filter(h => h.cep !== addr.cep);
     history.unshift({ cep: addr.cep, logradouro: addr.logradouro, bairro: addr.bairro, localidade: addr.localidade, uf: addr.uf, full: addr });
     if (history.length > 10) history.pop();
     localStorage.setItem('cep_history', JSON.stringify(history));
@@ -689,7 +833,7 @@ function renderHistory() {
     const list = document.getElementById('history-list');
     if (!history.length) { sec.style.display = 'none'; return; }
     sec.style.display = 'block';
-    list.innerHTML = history.map((h, i) => `
+    list.innerHTML = history.map(h => `
         <div class="history-item" onclick="selectAddress(${JSON.stringify(h.full).replace(/"/g,'&quot;')})">
             <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i>
             <div class="hi-text flex-grow-1">
